@@ -17,7 +17,8 @@ class CapturedPiecesWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final advantage = side == PlayerSide.white ? materialAdvantage : -materialAdvantage;
+    final advantage =
+        side == PlayerSide.white ? materialAdvantage : -materialAdvantage;
 
     return SizedBox(
       height: 28,

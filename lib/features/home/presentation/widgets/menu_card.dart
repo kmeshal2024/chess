@@ -23,7 +23,7 @@ class MenuCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = accentColor ?? AppColors.primary;
+    final color = accentColor ?? AppColors.gold;
 
     return Opacity(
       opacity: enabled ? 1.0 : 0.5,

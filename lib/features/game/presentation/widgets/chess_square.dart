@@ -33,7 +33,11 @@ class ChessSquare extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Color bgColor = isLightSquare ? AppColors.boardLight : AppColors.boardDark;
+    // Marble-style colors
+    const lightColor = Color(0xFFE8D5B0); // Cream marble
+    const darkColor = Color(0xFF1E1E1E); // Dark marble
+
+    Color bgColor = isLightSquare ? lightColor : darkColor;
 
     if (isSelected) {
       bgColor = AppColors.selectedSquare;
@@ -50,22 +54,51 @@ class ChessSquare extends StatelessWidget {
       child: Container(
         width: size,
         height: size,
-        color: bgColor,
+        decoration: BoxDecoration(
+          color: bgColor,
+          // Subtle marble texture via gradient overlay
+          gradient: isSelected || isCheckSquare
+              ? null
+              : LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: isLightSquare
+                      ? [
+                          bgColor,
+                          Color.lerp(bgColor, Colors.white, 0.06)!,
+                          bgColor,
+                          Color.lerp(bgColor, Colors.black, 0.04)!,
+                        ]
+                      : [
+                          bgColor,
+                          Color.lerp(bgColor, Colors.white, 0.04)!,
+                          bgColor,
+                          Color.lerp(bgColor, Colors.black, 0.06)!,
+                        ],
+                  stops: const [0.0, 0.3, 0.6, 1.0],
+                ),
+        ),
         child: Stack(
           children: [
             // Valid move indicator
             if (isValidMove && piece == null)
               Center(
                 child: Container(
-                  width: size * 0.28,
-                  height: size * 0.28,
-                  decoration: const BoxDecoration(
+                  width: size * 0.3,
+                  height: size * 0.3,
+                  decoration: BoxDecoration(
                     color: AppColors.validMoveDot,
                     shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 2,
+                      ),
+                    ],
                   ),
                 ),
               ),
-            // Capture indicator (valid move on enemy piece)
+            // Capture indicator
             if (isValidMove && piece != null)
               Positioned.fill(
                 child: Container(

@@ -21,8 +21,8 @@ class GradientButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final gradient = colors ??
         [
-          AppColors.primary,
-          AppColors.primary.withValues(alpha: 0.7),
+          AppColors.gold,
+          AppColors.goldDark,
         ];
 
     return SizedBox(
@@ -40,16 +40,21 @@ class GradientButton extends StatelessWidget {
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: AppColors.goldDark.withOpacity(0.5),
+                width: 1.5,
+              ),
               boxShadow: [
                 BoxShadow(
-                  color: gradient.first.withValues(alpha: 0.3),
+                  color: gradient.first.withOpacity(0.3),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
               ],
             ),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [

@@ -102,7 +102,7 @@ class _ControlButton extends StatelessWidget {
       opacity: enabled ? 1.0 : 0.35,
       child: Material(
         color: highlighted
-            ? AppColors.primary.withValues(alpha: 0.15)
+            ? AppColors.gold.withValues(alpha: 0.15)
             : AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
@@ -116,7 +116,7 @@ class _ControlButton extends StatelessWidget {
                 Icon(
                   icon,
                   color: highlighted
-                      ? AppColors.primary
+                      ? AppColors.gold
                       : AppColors.textSecondary,
                   size: 22,
                 ),
@@ -126,7 +126,7 @@ class _ControlButton extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 11,
                     color: highlighted
-                        ? AppColors.primary
+                        ? AppColors.gold
                         : AppColors.textSecondary,
                     fontWeight: FontWeight.w500,
                   ),

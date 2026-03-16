@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:chess/app/theme.dart';
 import 'package:chess/core/enums.dart';
 
@@ -32,9 +33,9 @@ class GameStatusBar extends StatelessWidget {
           const SizedBox(width: 10),
           Text(
             _getStatusText(),
-            style: TextStyle(
+            style: GoogleFonts.cinzel(
               fontSize: 14,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w700,
               color: _getStatusColor(),
             ),
           ),
@@ -77,7 +78,7 @@ class GameStatusBar extends StatelessWidget {
       case GameStatus.check:
         return AppColors.error;
       case GameStatus.checkmate:
-        return AppColors.accent;
+        return AppColors.gold;
       case GameStatus.stalemate:
       case GameStatus.draw:
         return AppColors.textSecondary;

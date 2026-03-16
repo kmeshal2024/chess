@@ -14,6 +14,8 @@ class ChessPieceWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isWhite = piece.side == PlayerSide.white;
+
     return SizedBox(
       width: size,
       height: size,
@@ -21,17 +23,32 @@ class ChessPieceWidget extends StatelessWidget {
         child: Text(
           _getPieceChar(piece),
           style: TextStyle(
-            fontSize: size * 0.68,
+            fontSize: size * 0.72,
             height: 1.0,
-            color: piece.side == PlayerSide.white
-                ? const Color(0xFFF8F8F0)
-                : const Color(0xFF1A1A1A),
+            color: isWhite
+                ? const Color(0xFFF5F0E0) // Warm cream white
+                : const Color(0xFF1A1A1A), // Deep black
             shadows: [
+              // Main shadow for depth
               Shadow(
-                color: Colors.black.withValues(alpha: 0.4),
-                blurRadius: 2,
-                offset: const Offset(0.5, 0.5),
+                color: Colors.black.withOpacity(isWhite ? 0.5 : 0.6),
+                blurRadius: 3,
+                offset: const Offset(1, 1.5),
               ),
+              // Subtle glow for white pieces
+              if (isWhite)
+                Shadow(
+                  color: Colors.white.withOpacity(0.15),
+                  blurRadius: 1,
+                  offset: const Offset(-0.5, -0.5),
+                ),
+              // Subtle rim highlight for black pieces
+              if (!isWhite)
+                Shadow(
+                  color: Colors.white.withOpacity(0.08),
+                  blurRadius: 1,
+                  offset: const Offset(-0.5, -0.5),
+                ),
             ],
           ),
         ),
@@ -40,7 +57,6 @@ class ChessPieceWidget extends StatelessWidget {
   }
 
   String _getPieceChar(ChessPiece piece) {
-    // Using filled chess symbols for both sides for clearer rendering
     switch (piece.type) {
       case PieceType.king:
         return '♚';

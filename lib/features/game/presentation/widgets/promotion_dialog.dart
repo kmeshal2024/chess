@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:chess/app/theme.dart';
 import 'package:chess/core/enums.dart';
 
@@ -21,15 +22,22 @@ class PromotionDialog extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF1B4D37),
+              Color(0xFF0A2E1F),
+            ],
+          ),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: AppColors.accent.withValues(alpha: 0.3),
-            width: 1,
+            color: AppColors.goldDark.withOpacity(0.5),
+            width: 2,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.5),
+              color: Colors.black.withOpacity(0.6),
               blurRadius: 24,
             ),
           ],
@@ -37,18 +45,18 @@ class PromotionDialog extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
+            Text(
               'Promote Pawn',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+              style: GoogleFonts.cinzel(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: AppColors.goldLight,
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'Choose a piece',
-              style: TextStyle(
+              style: GoogleFonts.inter(
                 fontSize: 13,
                 color: AppColors.textSecondary,
               ),
@@ -82,9 +90,9 @@ class PromotionDialog extends StatelessWidget {
             const SizedBox(height: 20),
             TextButton(
               onPressed: onCancel,
-              child: const Text(
+              child: Text(
                 'Cancel',
-                style: TextStyle(color: AppColors.textSecondary),
+                style: GoogleFonts.inter(color: AppColors.textMuted),
               ),
             ),
           ],
@@ -108,25 +116,39 @@ class _PromotionOption extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: AppColors.surfaceLight,
-      borderRadius: BorderRadius.circular(14),
+      color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(14),
         child: Container(
           width: 60,
           height: 60,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFF6B4C12),
+                Color(0xFF4A3208),
+              ],
+            ),
+            border: Border.all(
+              color: AppColors.goldDark.withOpacity(0.6),
+              width: 1.5,
+            ),
+          ),
           alignment: Alignment.center,
           child: Text(
             _getSymbol(),
             style: TextStyle(
               fontSize: 36,
               color: side == PlayerSide.white
-                  ? const Color(0xFFF0F0E8)
-                  : const Color(0xFF2A2A2A),
+                  ? const Color(0xFFF5F0E0)
+                  : const Color(0xFF1A1A1A),
               shadows: [
                 Shadow(
-                  color: Colors.black.withValues(alpha: 0.5),
+                  color: Colors.black.withOpacity(0.5),
                   blurRadius: 2,
                   offset: const Offset(0.5, 0.5),
                 ),

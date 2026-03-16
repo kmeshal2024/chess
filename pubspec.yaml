@@ -1,10 +1,10 @@
 name: chess
-description: "A professional chess mobile app with offline play and multiplayer-ready architecture."
+description: "A premium chess mobile game with stunning visuals and intelligent AI."
 publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.8.1
+  sdk: ">=3.0.0 <4.0.0"
 
 dependencies:
   flutter:

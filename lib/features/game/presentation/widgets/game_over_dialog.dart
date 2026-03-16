@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:chess/app/theme.dart';
 import 'package:chess/core/enums.dart';
 
@@ -23,81 +24,126 @@ class GameOverDialog extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(32),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF1B4D37),
+              Color(0xFF0A2E1F),
+            ],
+          ),
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
-            color: _getAccentColor().withValues(alpha: 0.3),
-            width: 1,
+            color: _getAccentColor().withOpacity(0.5),
+            width: 2,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.6),
+              color: Colors.black.withOpacity(0.7),
               blurRadius: 32,
+            ),
+            BoxShadow(
+              color: _getAccentColor().withOpacity(0.1),
+              blurRadius: 4,
+              spreadRadius: 0,
             ),
           ],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Icon
             Container(
-              width: 64,
-              height: 64,
+              width: 72,
+              height: 72,
               decoration: BoxDecoration(
-                color: _getAccentColor().withValues(alpha: 0.12),
                 shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: [
+                    _getAccentColor().withOpacity(0.3),
+                    _getAccentColor().withOpacity(0.1),
+                  ],
+                ),
+                border: Border.all(
+                  color: _getAccentColor().withOpacity(0.4),
+                  width: 2,
+                ),
               ),
               child: Icon(
                 _getIcon(),
                 color: _getAccentColor(),
-                size: 32,
+                size: 36,
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
             Text(
               _getTitle(),
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
+              style: GoogleFonts.cinzel(
+                fontSize: 26,
+                fontWeight: FontWeight.w800,
+                color: _getAccentColor(),
+                letterSpacing: 1,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             Text(
               _getSubtitle(),
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: GoogleFonts.inter(
                 fontSize: 14,
                 color: AppColors.textSecondary,
+                height: 1.5,
               ),
             ),
-            const SizedBox(height: 28),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: onNewGame,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _getAccentColor(),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+            const SizedBox(height: 32),
+            // New Game button
+            GestureDetector(
+              onTap: onNewGame,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      _getAccentColor(),
+                      Color.lerp(_getAccentColor(), Colors.black, 0.3)!,
+                    ],
                   ),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: AppColors.goldDark.withOpacity(0.5),
+                    width: 1.5,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: _getAccentColor().withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
                 ),
-                child: const Text(
-                  'New Game',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
+                child: Center(
+                  child: Text(
+                    'NEW GAME',
+                    style: GoogleFonts.cinzel(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                      letterSpacing: 2,
+                    ),
                   ),
                 ),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
             TextButton(
               onPressed: onDismiss,
-              child: const Text(
+              child: Text(
                 'Review Board',
-                style: TextStyle(color: AppColors.textSecondary),
+                style: GoogleFonts.inter(
+                  color: AppColors.textMuted,
+                  fontSize: 14,
+                ),
               ),
             ),
           ],
@@ -109,12 +155,12 @@ class GameOverDialog extends StatelessWidget {
   Color _getAccentColor() {
     switch (status) {
       case GameStatus.checkmate:
-        return AppColors.accent;
+        return AppColors.gold;
       case GameStatus.stalemate:
       case GameStatus.draw:
         return AppColors.textSecondary;
       default:
-        return AppColors.primary;
+        return AppColors.gold;
     }
   }
 
