@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'app/app.dart';
+import 'features/settings/presentation/providers/settings_provider.dart';
 
 /// Global flag: whether Firebase initialized successfully
 bool isFirebaseAvailable = false;
@@ -19,6 +21,9 @@ void main() async {
     debugPrint('Firebase not configured: $e');
   }
 
+  // Init SharedPreferences for settings persistence
+  final prefs = await SharedPreferences.getInstance();
+
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
@@ -34,8 +39,11 @@ void main() async {
   );
 
   runApp(
-    const ProviderScope(
-      child: ChessMateApp(),
+    ProviderScope(
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs),
+      ],
+      child: const ChessMateApp(),
     ),
   );
 }

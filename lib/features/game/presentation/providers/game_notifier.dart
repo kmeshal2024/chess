@@ -1,5 +1,8 @@
+import 'dart:async';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chess/core/enums.dart';
+import 'package:chess/core/services/sound_service.dart';
 import '../../domain/entities/board_position.dart';
 import '../../domain/entities/chess_piece.dart';
 import '../../domain/services/chess_engine_service.dart';
@@ -7,12 +10,29 @@ import 'game_state.dart';
 
 class GameNotifier extends StateNotifier<GameState> {
   final ChessEngineService _engine;
+  final SoundService? _soundService;
+  final bool Function() _isSoundEnabled;
+  final bool Function() _isHapticEnabled;
+  Timer? _hintTimer;
 
-  GameNotifier(this._engine)
-      : super(GameState(
+  GameNotifier(
+    this._engine, {
+    SoundService? soundService,
+    bool Function()? isSoundEnabled,
+    bool Function()? isHapticEnabled,
+  })  : _soundService = soundService,
+        _isSoundEnabled = isSoundEnabled ?? (() => true),
+        _isHapticEnabled = isHapticEnabled ?? (() => true),
+        super(GameState(
           board: List.generate(8, (_) => List.filled(8, null)),
         )) {
     _startNewGame();
+  }
+
+  @override
+  void dispose() {
+    _hintTimer?.cancel();
+    super.dispose();
   }
 
   void _startNewGame() {
@@ -20,7 +40,6 @@ class GameNotifier extends StateNotifier<GameState> {
       _engine.newGame();
       _syncStateFromEngine();
     } catch (e) {
-      // If engine fails, set up an empty board so the UI doesn't crash
       state = GameState(
         board: List.generate(8, (_) => List<ChessPiece?>.filled(8, null)),
         status: GameStatus.idle,
@@ -29,6 +48,7 @@ class GameNotifier extends StateNotifier<GameState> {
   }
 
   void restartGame() {
+    _hintTimer?.cancel();
     try {
       _engine.newGame();
       state = GameState(
@@ -37,6 +57,7 @@ class GameNotifier extends StateNotifier<GameState> {
         status: GameStatus.playing,
         gameId: state.gameId,
         boardFlipped: state.boardFlipped,
+        hintsRemaining: 4,
       );
     } catch (e) {
       state = GameState(
@@ -86,7 +107,6 @@ class GameNotifier extends StateNotifier<GameState> {
 
   void _handleMoveAttempt(BoardPosition from, BoardPosition to) {
     try {
-      // Check if this is a promotion move
       if (_engine.isPromotionMove(from, to)) {
         state = state.copyWith(
           awaitingPromotion: true,
@@ -163,22 +183,50 @@ class GameNotifier extends StateNotifier<GameState> {
         newStatus = GameStatus.check;
       }
 
+      // Clear hint on move
+      _hintTimer?.cancel();
+
       state = state.copyWith(
         board: _engine.getBoard(),
         currentTurn: _engine.getCurrentTurn(),
         status: newStatus,
         clearSelection: true,
+        clearHint: true,
         lastMove: move,
         moveHistory: _engine.getMoveHistory(),
         capturedByWhite: capturedByWhite,
         capturedByBlack: capturedByBlack,
         awaitingPromotion: false,
       );
+
+      // Play sound effects
+      _playMoveSound(newStatus, move.capturedPiece != null);
+
+      // Haptic feedback
+      if (_isHapticEnabled()) {
+        HapticFeedback.mediumImpact();
+      }
     } catch (e) {
       state = state.copyWith(
         clearSelection: true,
         awaitingPromotion: false,
       );
+    }
+  }
+
+  void _playMoveSound(GameStatus status, bool isCapture) {
+    if (!_isSoundEnabled() || _soundService == null) return;
+
+    if (status == GameStatus.checkmate ||
+        status == GameStatus.stalemate ||
+        status == GameStatus.draw) {
+      _soundService.playGameOver();
+    } else if (status == GameStatus.check) {
+      _soundService.playCheck();
+    } else if (isCapture) {
+      _soundService.playCapture();
+    } else {
+      _soundService.playMove();
     }
   }
 
@@ -227,6 +275,50 @@ class GameNotifier extends StateNotifier<GameState> {
 
   void flipBoard() {
     state = state.copyWith(boardFlipped: !state.boardFlipped);
+  }
+
+  /// Request a hint from the AI engine
+  Future<void> requestHint() async {
+    if (state.hintsRemaining <= 0) return;
+    if (state.isLoadingHint) return;
+    if (state.status != GameStatus.playing &&
+        state.status != GameStatus.check) {
+      return;
+    }
+
+    state = state.copyWith(isLoadingHint: true, clearHint: true);
+
+    try {
+      final bestMove = await _engine.getBestMove();
+      if (bestMove == null || !mounted) {
+        if (mounted) state = state.copyWith(isLoadingHint: false);
+        return;
+      }
+
+      final (from, to) = bestMove;
+
+      state = state.copyWith(
+        hintFrom: from,
+        hintTo: to,
+        hintsRemaining: state.hintsRemaining - 1,
+        isLoadingHint: false,
+      );
+
+      // Auto-clear hint after 3 seconds
+      _hintTimer?.cancel();
+      _hintTimer = Timer(const Duration(seconds: 3), () {
+        if (mounted) {
+          clearHint();
+        }
+      });
+    } catch (e) {
+      if (mounted) state = state.copyWith(isLoadingHint: false);
+    }
+  }
+
+  void clearHint() {
+    _hintTimer?.cancel();
+    state = state.copyWith(clearHint: true);
   }
 
   void _syncStateFromEngine() {

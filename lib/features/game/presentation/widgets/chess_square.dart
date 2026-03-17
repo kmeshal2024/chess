@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:chess/app/theme.dart';
+import 'package:chess/features/settings/domain/models/board_theme_data.dart';
 import '../../domain/entities/chess_piece.dart';
 import 'chess_piece_widget.dart';
 
@@ -12,8 +13,11 @@ class ChessSquare extends StatelessWidget {
   final bool isLastMoveFrom;
   final bool isLastMoveTo;
   final bool isCheckSquare;
+  final bool isHintFrom;
+  final bool isHintTo;
   final VoidCallback onTap;
   final double size;
+  final BoardThemeData themeData;
 
   const ChessSquare({
     super.key,
@@ -25,19 +29,19 @@ class ChessSquare extends StatelessWidget {
     this.isLastMoveFrom = false,
     this.isLastMoveTo = false,
     this.isCheckSquare = false,
+    this.isHintFrom = false,
+    this.isHintTo = false,
     required this.onTap,
     required this.size,
+    required this.themeData,
   });
 
   bool get isLightSquare => (row + col) % 2 == 0;
 
   @override
   Widget build(BuildContext context) {
-    // Classic chess board colors - clearly distinct
-    const lightColor = Color(0xFFEDD6B0); // Warm tan/cream
-    const darkColor = Color(0xFF2C2C2C); // Dark charcoal
-
-    Color bgColor = isLightSquare ? lightColor : darkColor;
+    Color bgColor =
+        isLightSquare ? themeData.lightSquare : themeData.darkSquare;
 
     if (isSelected) {
       bgColor = AppColors.selectedSquare;
@@ -45,12 +49,12 @@ class ChessSquare extends StatelessWidget {
       bgColor = AppColors.checkSquare;
     } else if (isLastMoveTo) {
       bgColor = isLightSquare
-          ? const Color(0xFFC8C878) // Olive highlight on light
-          : const Color(0xFF6B8F47); // Green highlight on dark
+          ? themeData.lastMoveToLight
+          : themeData.lastMoveToDark;
     } else if (isLastMoveFrom) {
       bgColor = isLightSquare
-          ? const Color(0xFFDADA9A) // Subtle olive on light
-          : const Color(0xFF5A7A3D); // Subtle green on dark
+          ? themeData.lastMoveFromLight
+          : themeData.lastMoveFromDark;
     }
 
     return GestureDetector(
@@ -63,6 +67,19 @@ class ChessSquare extends StatelessWidget {
         ),
         child: Stack(
           children: [
+            // Hint highlight glow
+            if (isHintFrom || isHintTo)
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF4A90D9).withValues(alpha: 0.35),
+                    border: Border.all(
+                      color: const Color(0xFF4A90D9).withValues(alpha: 0.7),
+                      width: 2,
+                    ),
+                  ),
+                ),
+              ),
             // Valid move indicator - dot
             if (isValidMove && piece == null)
               Center(
@@ -81,7 +98,7 @@ class ChessSquare extends StatelessWidget {
                   ),
                 ),
               ),
-            // Capture indicator - corner triangles
+            // Capture indicator - border
             if (isValidMove && piece != null)
               Positioned.fill(
                 child: Container(

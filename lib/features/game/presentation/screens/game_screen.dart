@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:chess/app/theme.dart';
+import 'package:chess/app/router.dart';
 import 'package:chess/core/enums.dart';
 import 'package:chess/shared/widgets/gold_button.dart';
 import 'package:chess/shared/widgets/player_avatar.dart';
@@ -77,18 +78,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
           child: LayoutBuilder(
             builder: (context, constraints) {
               final screenWidth = constraints.maxWidth;
-              final screenHeight = constraints.maxHeight;
-              // Calculate board size to fit within available space
-              final topBarHeight = 60.0;
-              final indicatorsHeight = 50.0;
-              final controlsHeight = 110.0;
-              final padding = 40.0;
-              final availableForBoard =
-                  screenHeight - topBarHeight - indicatorsHeight - controlsHeight - padding;
               final maxBoardSize = screenWidth - 32;
-              final boardSize = availableForBoard < maxBoardSize
-                  ? availableForBoard
-                  : maxBoardSize;
 
               return Column(
                 children: [
@@ -196,7 +186,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
           ),
           const Spacer(),
           GestureDetector(
-            onTap: () {},
+            onTap: () => Navigator.pushNamed(context, AppRouter.settings),
             child: Container(
               width: 40,
               height: 40,
@@ -302,10 +292,14 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                 : null,
           ),
           CircularGameButton(
-            icon: Icons.lightbulb_rounded,
+            icon: state.isLoadingHint
+                ? Icons.hourglass_top_rounded
+                : Icons.lightbulb_rounded,
             label: 'Hint',
-            badgeText: '4',
-            onTap: () {},
+            badgeText: '${state.hintsRemaining}',
+            onTap: state.hintsRemaining > 0 && !isGameOver && !state.isLoadingHint
+                ? () => notifier.requestHint()
+                : null,
           ),
         ],
       ),

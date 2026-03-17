@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:chess/app/theme.dart';
+import '../../domain/models/app_settings.dart';
+import '../../domain/models/board_theme_data.dart';
+import '../providers/settings_provider.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(settingsProvider);
+    final notifier = ref.read(settingsProvider.notifier);
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -36,9 +43,9 @@ class SettingsScreen extends StatelessWidget {
                         height: 40,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: AppColors.surface.withOpacity(0.5),
+                          color: AppColors.surface.withValues(alpha: 0.5),
                           border: Border.all(
-                              color: AppColors.goldDark.withOpacity(0.3),
+                              color: AppColors.goldDark.withValues(alpha: 0.3),
                               width: 1.5),
                         ),
                         child: const Icon(Icons.arrow_back_rounded,
@@ -65,20 +72,22 @@ class SettingsScreen extends StatelessWidget {
                       _SettingsTile(
                         icon: Icons.palette_outlined,
                         title: 'Board Theme',
-                        subtitle: 'Marble',
-                        onTap: () {},
+                        subtitle:
+                            BoardThemeData.fromEnum(settings.boardTheme).label,
+                        onTap: () =>
+                            _showBoardThemeSheet(context, settings, notifier),
                       ),
                       _SettingsTile(
                         icon: Icons.volume_up_outlined,
                         title: 'Sound Effects',
-                        subtitle: 'On',
-                        onTap: () {},
+                        subtitle: settings.soundEnabled ? 'On' : 'Off',
+                        onTap: () => notifier.toggleSound(),
                       ),
                       _SettingsTile(
                         icon: Icons.vibration_rounded,
                         title: 'Haptic Feedback',
-                        subtitle: 'On',
-                        onTap: () {},
+                        subtitle: settings.hapticEnabled ? 'On' : 'Off',
+                        onTap: () => notifier.toggleHaptic(),
                       ),
                     ]),
                     const SizedBox(height: 24),
@@ -86,14 +95,16 @@ class SettingsScreen extends StatelessWidget {
                       _SettingsTile(
                         icon: Icons.format_size_rounded,
                         title: 'Piece Style',
-                        subtitle: 'Classic',
-                        onTap: () {},
+                        subtitle: settings.pieceStyle.name[0].toUpperCase() +
+                            settings.pieceStyle.name.substring(1),
+                        onTap: () =>
+                            _showPieceStyleSheet(context, settings, notifier),
                       ),
                       _SettingsTile(
                         icon: Icons.grid_on_rounded,
                         title: 'Show Coordinates',
-                        subtitle: 'On',
-                        onTap: () {},
+                        subtitle: settings.showCoordinates ? 'On' : 'Off',
+                        onTap: () => notifier.toggleCoordinates(),
                       ),
                     ]),
                     const SizedBox(height: 24),
@@ -110,6 +121,152 @@ class SettingsScreen extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  void _showBoardThemeSheet(
+      BuildContext context, AppSettings settings, dynamic notifier) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Board Theme',
+              style: GoogleFonts.cinzel(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: AppColors.goldLight,
+              ),
+            ),
+            const SizedBox(height: 16),
+            ...BoardTheme.values.map((theme) {
+              final data = BoardThemeData.fromEnum(theme);
+              final isSelected = settings.boardTheme == theme;
+              return ListTile(
+                leading: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(6),
+                    border: isSelected
+                        ? Border.all(color: AppColors.goldLight, width: 2)
+                        : null,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: data.lightSquare,
+                            borderRadius: const BorderRadius.horizontal(
+                                left: Radius.circular(5)),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: data.darkSquare,
+                            borderRadius: const BorderRadius.horizontal(
+                                right: Radius.circular(5)),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                title: Text(
+                  data.label,
+                  style: TextStyle(
+                    color: isSelected
+                        ? AppColors.goldLight
+                        : AppColors.textPrimary,
+                    fontWeight:
+                        isSelected ? FontWeight.w700 : FontWeight.normal,
+                  ),
+                ),
+                trailing: isSelected
+                    ? const Icon(Icons.check_circle,
+                        color: AppColors.goldLight, size: 22)
+                    : null,
+                onTap: () {
+                  notifier.setBoardTheme(theme);
+                  Navigator.pop(ctx);
+                },
+              );
+            }),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showPieceStyleSheet(
+      BuildContext context, AppSettings settings, dynamic notifier) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Piece Style',
+              style: GoogleFonts.cinzel(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: AppColors.goldLight,
+              ),
+            ),
+            const SizedBox(height: 16),
+            ...PieceStyle.values.map((style) {
+              final isSelected = settings.pieceStyle == style;
+              final label =
+                  style.name[0].toUpperCase() + style.name.substring(1);
+              return ListTile(
+                leading: Icon(
+                  Icons.extension_rounded,
+                  color:
+                      isSelected ? AppColors.goldLight : AppColors.textMuted,
+                ),
+                title: Text(
+                  label,
+                  style: TextStyle(
+                    color: isSelected
+                        ? AppColors.goldLight
+                        : AppColors.textPrimary,
+                    fontWeight:
+                        isSelected ? FontWeight.w700 : FontWeight.normal,
+                  ),
+                ),
+                trailing: isSelected
+                    ? const Icon(Icons.check_circle,
+                        color: AppColors.goldLight, size: 22)
+                    : null,
+                onTap: () {
+                  notifier.setPieceStyle(style);
+                  Navigator.pop(ctx);
+                },
+              );
+            }),
+            const SizedBox(height: 8),
+          ],
         ),
       ),
     );
@@ -133,10 +290,10 @@ class SettingsScreen extends StatelessWidget {
         ),
         Container(
           decoration: BoxDecoration(
-            color: AppColors.surface.withOpacity(0.5),
+            color: AppColors.surface.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-                color: AppColors.goldDark.withOpacity(0.2), width: 1),
+                color: AppColors.goldDark.withValues(alpha: 0.2), width: 1),
           ),
           child: Column(
             children: tiles
@@ -146,7 +303,7 @@ class SettingsScreen extends StatelessWidget {
                         Divider(
                           height: 1,
                           indent: 56,
-                          color: AppColors.divider.withOpacity(0.5),
+                          color: AppColors.divider.withValues(alpha: 0.5),
                         ),
                     ])
                 .toList(),
@@ -200,7 +357,7 @@ class _SettingsTile extends StatelessWidget {
             const SizedBox(width: 8),
             Icon(
               Icons.chevron_right_rounded,
-              color: AppColors.goldDark.withOpacity(0.5),
+              color: AppColors.goldDark.withValues(alpha: 0.5),
               size: 20,
             ),
           ],

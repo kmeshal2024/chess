@@ -197,6 +197,28 @@ class BishopChessEngine implements ChessEngineService {
   @override
   List<ChessMove> getMoveHistory() => List.unmodifiable(_moveHistory);
 
+  @override
+  Future<(BoardPosition, BoardPosition)?> getBestMove() async {
+    try {
+      if (_game.gameOver) return null;
+
+      final engine = bishop.Engine(game: _game);
+      final result = await engine.search();
+
+      final bestMove = result.move;
+      if (bestMove == null) return null;
+
+      final fromRow = bestMove.from ~/ 16;
+      final fromCol = bestMove.from % 16;
+      final toRow = bestMove.to ~/ 16;
+      final toCol = bestMove.to % 16;
+
+      return (BoardPosition(fromRow, fromCol), BoardPosition(toRow, toCol));
+    } catch (e) {
+      return null;
+    }
+  }
+
   // --- Helpers ---
 
   bool _isCastlingMove(ChessPiece piece, BoardPosition from, BoardPosition to) {

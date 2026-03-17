@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chess/app/theme.dart';
 import 'package:chess/core/enums.dart';
+import 'package:chess/features/settings/domain/models/board_theme_data.dart';
+import 'package:chess/features/settings/presentation/providers/settings_provider.dart';
 import '../../domain/entities/board_position.dart';
 import '../../domain/entities/chess_piece.dart';
 import '../providers/game_provider.dart';
@@ -24,6 +26,9 @@ class ChessBoardWidget extends ConsumerWidget {
     }
 
     final notifier = ref.read(gameProvider.notifier);
+    final settings = ref.watch(settingsProvider);
+    final boardTheme = BoardThemeData.fromEnum(settings.boardTheme);
+    final showCoords = settings.showCoordinates;
 
     // Safety check: board must be 8x8
     if (state.board.length != 8 ||
@@ -39,7 +44,7 @@ class ChessBoardWidget extends ConsumerWidget {
         final totalSize = constraints.maxWidth < constraints.maxHeight
             ? constraints.maxWidth
             : constraints.maxHeight;
-        final coordSize = 18.0;
+        final coordSize = showCoords ? 18.0 : 0.0;
         final boardSize = totalSize - coordSize;
         final squareSize = boardSize / 8;
 
@@ -104,6 +109,8 @@ class ChessBoardWidget extends ConsumerWidget {
                                 state.status,
                                 state.currentTurn,
                                 piece);
+                            final isHintFrom = state.hintFrom == pos;
+                            final isHintTo = state.hintTo == pos;
 
                             return ChessSquare(
                               row: row,
@@ -114,7 +121,10 @@ class ChessBoardWidget extends ConsumerWidget {
                               isLastMoveFrom: isLastMoveFrom,
                               isLastMoveTo: isLastMoveTo,
                               isCheckSquare: isCheckSquare,
+                              isHintFrom: isHintFrom,
+                              isHintTo: isHintTo,
                               size: squareSize,
+                              themeData: boardTheme,
                               onTap: () => notifier.selectSquare(pos),
                             );
                           }),
@@ -125,64 +135,68 @@ class ChessBoardWidget extends ConsumerWidget {
                 ),
               ),
               // Rank labels (left side)
-              Positioned(
-                left: 0,
-                top: 0,
-                child: SizedBox(
-                  width: coordSize,
-                  height: boardSize,
-                  child: Column(
-                    children: List.generate(8, (i) {
-                      final rank =
-                          state.boardFlipped ? '${i + 1}' : '${8 - i}';
-                      return SizedBox(
-                        height: squareSize,
-                        child: Center(
-                          child: Text(
-                            rank,
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.goldDark.withValues(alpha: 0.7),
+              if (showCoords)
+                Positioned(
+                  left: 0,
+                  top: 0,
+                  child: SizedBox(
+                    width: coordSize,
+                    height: boardSize,
+                    child: Column(
+                      children: List.generate(8, (i) {
+                        final rank =
+                            state.boardFlipped ? '${i + 1}' : '${8 - i}';
+                        return SizedBox(
+                          height: squareSize,
+                          child: Center(
+                            child: Text(
+                              rank,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color:
+                                    AppColors.goldDark.withValues(alpha: 0.7),
+                              ),
                             ),
                           ),
-                        ),
-                      );
-                    }),
+                        );
+                      }),
+                    ),
                   ),
                 ),
-              ),
               // File labels (bottom)
-              Positioned(
-                left: coordSize,
-                bottom: 0,
-                child: SizedBox(
-                  width: boardSize,
-                  height: coordSize,
-                  child: Row(
-                    children: List.generate(8, (i) {
-                      const files = [
-                        'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'
-                      ];
-                      final file =
-                          state.boardFlipped ? files[7 - i] : files[i];
-                      return SizedBox(
-                        width: squareSize,
-                        child: Center(
-                          child: Text(
-                            file,
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.goldDark.withValues(alpha: 0.7),
+              if (showCoords)
+                Positioned(
+                  left: coordSize,
+                  bottom: 0,
+                  child: SizedBox(
+                    width: boardSize,
+                    height: coordSize,
+                    child: Row(
+                      children: List.generate(8, (i) {
+                        const files = [
+                          'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'
+                        ];
+                        final file =
+                            state.boardFlipped ? files[7 - i] : files[i];
+                        return SizedBox(
+                          width: squareSize,
+                          child: Center(
+                            child: Text(
+                              file,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color:
+                                    AppColors.goldDark.withValues(alpha: 0.7),
+                              ),
                             ),
                           ),
-                        ),
-                      );
-                    }),
+                        );
+                      }),
+                    ),
                   ),
                 ),
-              ),
             ],
           ),
         );

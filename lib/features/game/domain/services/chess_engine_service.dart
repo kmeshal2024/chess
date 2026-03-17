@@ -37,4 +37,7 @@ abstract class ChessEngineService {
   bool isPromotionMove(BoardPosition from, BoardPosition to);
 
   List<ChessMove> getMoveHistory();
+
+  /// Get the best move from the AI engine (for hints)
+  Future<(BoardPosition from, BoardPosition to)?> getBestMove();
 }

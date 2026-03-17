@@ -19,6 +19,10 @@ class GameState extends Equatable {
   final BoardPosition? promotionTo;
   final String? gameId;
   final bool boardFlipped;
+  final int hintsRemaining;
+  final BoardPosition? hintFrom;
+  final BoardPosition? hintTo;
+  final bool isLoadingHint;
 
   const GameState({
     required this.board,
@@ -35,6 +39,10 @@ class GameState extends Equatable {
     this.promotionTo,
     this.gameId,
     this.boardFlipped = false,
+    this.hintsRemaining = 4,
+    this.hintFrom,
+    this.hintTo,
+    this.isLoadingHint = false,
   });
 
   GameState copyWith({
@@ -54,12 +62,18 @@ class GameState extends Equatable {
     BoardPosition? promotionTo,
     String? gameId,
     bool? boardFlipped,
+    int? hintsRemaining,
+    BoardPosition? hintFrom,
+    BoardPosition? hintTo,
+    bool clearHint = false,
+    bool? isLoadingHint,
   }) {
     return GameState(
       board: board ?? this.board,
       currentTurn: currentTurn ?? this.currentTurn,
       status: status ?? this.status,
-      selectedSquare: clearSelection ? null : (selectedSquare ?? this.selectedSquare),
+      selectedSquare:
+          clearSelection ? null : (selectedSquare ?? this.selectedSquare),
       validMoves: clearSelection ? {} : (validMoves ?? this.validMoves),
       lastMove: clearLastMove ? null : (lastMove ?? this.lastMove),
       moveHistory: moveHistory ?? this.moveHistory,
@@ -70,6 +84,10 @@ class GameState extends Equatable {
       promotionTo: promotionTo ?? this.promotionTo,
       gameId: gameId ?? this.gameId,
       boardFlipped: boardFlipped ?? this.boardFlipped,
+      hintsRemaining: hintsRemaining ?? this.hintsRemaining,
+      hintFrom: clearHint ? null : (hintFrom ?? this.hintFrom),
+      hintTo: clearHint ? null : (hintTo ?? this.hintTo),
+      isLoadingHint: isLoadingHint ?? this.isLoadingHint,
     );
   }
 
@@ -97,5 +115,9 @@ class GameState extends Equatable {
         capturedByBlack.length,
         awaitingPromotion,
         boardFlipped,
+        hintsRemaining,
+        hintFrom,
+        hintTo,
+        isLoadingHint,
       ];
 }
