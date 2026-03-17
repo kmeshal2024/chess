@@ -39,9 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: SafeArea(
           child: Column(
             children: [
-              // Top bar
               _buildTopBar(),
-              // Scrollable content
               Expanded(
                 child: SingleChildScrollView(
                   physics: const BouncingScrollPhysics(),
@@ -54,6 +52,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       _buildMainPanel(),
                       const SizedBox(height: 24),
                       _buildPlayButton(),
+                      const SizedBox(height: 16),
+                      _buildOnlineButton(),
                       const SizedBox(height: 24),
                     ],
                   ),
@@ -82,13 +82,13 @@ class _HomeScreenState extends State<HomeScreen> {
               border: Border.all(color: AppColors.goldDark, width: 2),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.4),
+                  color: Colors.black.withValues(alpha: 0.4),
                   blurRadius: 6,
                 ),
               ],
             ),
             child: const Center(
-              child: Text('♔',
+              child: Text('\u2654',
                   style: TextStyle(fontSize: 22, color: AppColors.goldLight)),
             ),
           ),
@@ -110,9 +110,9 @@ class _HomeScreenState extends State<HomeScreen> {
               height: 40,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.surface.withOpacity(0.5),
+                color: AppColors.surface.withValues(alpha: 0.5),
                 border: Border.all(
-                    color: AppColors.goldDark.withOpacity(0.3), width: 1.5),
+                    color: AppColors.goldDark.withValues(alpha: 0.3), width: 1.5),
               ),
               child: const Icon(Icons.settings_rounded,
                   color: AppColors.goldLight, size: 20),
@@ -133,7 +133,7 @@ class _HomeScreenState extends State<HomeScreen> {
               gradient: LinearGradient(
                 colors: [
                   Colors.transparent,
-                  AppColors.goldDark.withOpacity(0.5),
+                  AppColors.goldDark.withValues(alpha: 0.5),
                 ],
               ),
             ),
@@ -157,7 +157,7 @@ class _HomeScreenState extends State<HomeScreen> {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  AppColors.goldDark.withOpacity(0.5),
+                  AppColors.goldDark.withValues(alpha: 0.5),
                   Colors.transparent,
                 ],
               ),
@@ -190,7 +190,7 @@ class _HomeScreenState extends State<HomeScreen> {
               gradient: LinearGradient(
                 colors: [
                   Colors.transparent,
-                  AppColors.goldDark.withOpacity(0.3),
+                  AppColors.goldDark.withValues(alpha: 0.3),
                   Colors.transparent,
                 ],
               ),
@@ -208,7 +208,7 @@ class _HomeScreenState extends State<HomeScreen> {
               gradient: LinearGradient(
                 colors: [
                   Colors.transparent,
-                  AppColors.goldDark.withOpacity(0.3),
+                  AppColors.goldDark.withValues(alpha: 0.3),
                   Colors.transparent,
                 ],
               ),
@@ -225,9 +225,9 @@ class _HomeScreenState extends State<HomeScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        _buildPieceOption(0, '♔', 'White', const Color(0xFFF0ECE0)),
-        _buildPieceOption(1, '♚', 'Random', AppColors.textSecondary),
-        _buildPieceOption(2, '♚', 'Black', const Color(0xFF2A2A2A)),
+        _buildPieceOption(0, '\u2654', 'White', const Color(0xFFF0ECE0)),
+        _buildPieceOption(1, '\u265A', 'Random', AppColors.textSecondary),
+        _buildPieceOption(2, '\u265A', 'Black', const Color(0xFF2A2A2A)),
       ],
     );
   }
@@ -244,18 +244,18 @@ class _HomeScreenState extends State<HomeScreen> {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(14),
           color: isSelected
-              ? AppColors.goldDark.withOpacity(0.25)
+              ? AppColors.goldDark.withValues(alpha: 0.25)
               : Colors.transparent,
           border: Border.all(
             color: isSelected
-                ? AppColors.goldDark.withOpacity(0.7)
-                : AppColors.textMuted.withOpacity(0.15),
+                ? AppColors.goldDark.withValues(alpha: 0.7)
+                : AppColors.textMuted.withValues(alpha: 0.15),
             width: isSelected ? 2 : 1,
           ),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: AppColors.gold.withOpacity(0.15),
+                    color: AppColors.gold.withValues(alpha: 0.15),
                     blurRadius: 8,
                   ),
                 ]
@@ -269,14 +269,14 @@ class _HomeScreenState extends State<HomeScreen> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: index == 1
-                    ? AppColors.surface.withOpacity(0.5)
+                    ? AppColors.surface.withValues(alpha: 0.5)
                     : (index == 0
-                        ? Colors.white.withOpacity(0.15)
-                        : Colors.black.withOpacity(0.3)),
+                        ? Colors.white.withValues(alpha: 0.15)
+                        : Colors.black.withValues(alpha: 0.3)),
                 border: Border.all(
                   color: isSelected
                       ? AppColors.goldDark
-                      : AppColors.textMuted.withOpacity(0.2),
+                      : AppColors.textMuted.withValues(alpha: 0.2),
                   width: 1.5,
                 ),
               ),
@@ -288,7 +288,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     color: index == 1 ? AppColors.goldLight : pieceColor,
                     shadows: [
                       Shadow(
-                        color: Colors.black.withOpacity(0.5),
+                        color: Colors.black.withValues(alpha: 0.5),
                         blurRadius: 4,
                         offset: const Offset(1, 1),
                       ),
@@ -365,6 +365,19 @@ class _HomeScreenState extends State<HomeScreen> {
         isLarge: true,
         backgroundColor: const Color(0xFF4CAF50),
         onTap: () => Navigator.pushNamed(context, AppRouter.game),
+      ),
+    );
+  }
+
+  Widget _buildOnlineButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: GoldButton(
+        label: 'PLAY ONLINE',
+        icon: Icons.language_rounded,
+        isLarge: true,
+        backgroundColor: const Color(0xFF2196F3),
+        onTap: () => Navigator.pushNamed(context, AppRouter.online),
       ),
     );
   }

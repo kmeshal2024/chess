@@ -33,9 +33,9 @@ class ChessSquare extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Marble-style colors
-    const lightColor = Color(0xFFE8D5B0); // Cream marble
-    const darkColor = Color(0xFF1E1E1E); // Dark marble
+    // Classic chess board colors - clearly distinct
+    const lightColor = Color(0xFFEDD6B0); // Warm tan/cream
+    const darkColor = Color(0xFF2C2C2C); // Dark charcoal
 
     Color bgColor = isLightSquare ? lightColor : darkColor;
 
@@ -44,9 +44,13 @@ class ChessSquare extends StatelessWidget {
     } else if (isCheckSquare) {
       bgColor = AppColors.checkSquare;
     } else if (isLastMoveTo) {
-      bgColor = Color.lerp(bgColor, AppColors.lastMoveTo, 0.5)!;
+      bgColor = isLightSquare
+          ? const Color(0xFFC8C878) // Olive highlight on light
+          : const Color(0xFF6B8F47); // Green highlight on dark
     } else if (isLastMoveFrom) {
-      bgColor = Color.lerp(bgColor, AppColors.lastMoveFrom, 0.4)!;
+      bgColor = isLightSquare
+          ? const Color(0xFFDADA9A) // Subtle olive on light
+          : const Color(0xFF5A7A3D); // Subtle green on dark
     }
 
     return GestureDetector(
@@ -56,31 +60,10 @@ class ChessSquare extends StatelessWidget {
         height: size,
         decoration: BoxDecoration(
           color: bgColor,
-          // Subtle marble texture via gradient overlay
-          gradient: isSelected || isCheckSquare
-              ? null
-              : LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: isLightSquare
-                      ? [
-                          bgColor,
-                          Color.lerp(bgColor, Colors.white, 0.06)!,
-                          bgColor,
-                          Color.lerp(bgColor, Colors.black, 0.04)!,
-                        ]
-                      : [
-                          bgColor,
-                          Color.lerp(bgColor, Colors.white, 0.04)!,
-                          bgColor,
-                          Color.lerp(bgColor, Colors.black, 0.06)!,
-                        ],
-                  stops: const [0.0, 0.3, 0.6, 1.0],
-                ),
         ),
         child: Stack(
           children: [
-            // Valid move indicator
+            // Valid move indicator - dot
             if (isValidMove && piece == null)
               Center(
                 child: Container(
@@ -91,14 +74,14 @@ class ChessSquare extends StatelessWidget {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
+                        color: Colors.black.withValues(alpha: 0.2),
                         blurRadius: 2,
                       ),
                     ],
                   ),
                 ),
               ),
-            // Capture indicator
+            // Capture indicator - corner triangles
             if (isValidMove && piece != null)
               Positioned.fill(
                 child: Container(
@@ -107,7 +90,6 @@ class ChessSquare extends StatelessWidget {
                       color: AppColors.validMoveCapture,
                       width: size * 0.08,
                     ),
-                    shape: BoxShape.circle,
                   ),
                 ),
               ),
