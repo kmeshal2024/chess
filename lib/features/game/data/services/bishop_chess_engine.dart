@@ -198,12 +198,18 @@ class BishopChessEngine implements ChessEngineService {
   List<ChessMove> getMoveHistory() => List.unmodifiable(_moveHistory);
 
   @override
-  Future<(BoardPosition, BoardPosition)?> getBestMove() async {
+  Future<(BoardPosition, BoardPosition)?> getBestMove({int difficulty = 5}) async {
     try {
       if (_game.gameOver) return null;
 
+      // Map difficulty (1-5) to search parameters
+      final (maxDepth, timeLimit) = _difficultyParams(difficulty);
+
       final engine = bishop.Engine(game: _game);
-      final result = await engine.search();
+      final result = await engine.search(
+        maxDepth: maxDepth,
+        timeLimit: timeLimit,
+      );
 
       final bestMove = result.move;
       if (bestMove == null) return null;
@@ -216,6 +222,25 @@ class BishopChessEngine implements ChessEngineService {
       return (BoardPosition(fromRow, fromCol), BoardPosition(toRow, toCol));
     } catch (e) {
       return null;
+    }
+  }
+
+  // --- Difficulty Mapping ---
+
+  static (int, int) _difficultyParams(int difficulty) {
+    switch (difficulty) {
+      case 1:
+        return (1, 200); // Beginner: depth 1, 200ms
+      case 2:
+        return (2, 500); // Easy: depth 2, 500ms
+      case 3:
+        return (3, 1500); // Medium: depth 3, 1.5s
+      case 4:
+        return (5, 3000); // Hard: depth 5, 3s
+      case 5:
+        return (50, 5000); // Expert: full strength
+      default:
+        return (3, 1500);
     }
   }
 

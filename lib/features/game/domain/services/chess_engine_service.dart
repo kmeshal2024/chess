@@ -38,6 +38,7 @@ abstract class ChessEngineService {
 
   List<ChessMove> getMoveHistory();
 
-  /// Get the best move from the AI engine (for hints)
-  Future<(BoardPosition from, BoardPosition to)?> getBestMove();
+  /// Get the best move from the AI engine
+  /// [difficulty] ranges from 1 (beginner) to 5 (expert)
+  Future<(BoardPosition from, BoardPosition to)?> getBestMove({int difficulty = 5});
 }

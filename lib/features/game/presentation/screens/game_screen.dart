@@ -21,6 +21,27 @@ class GameScreen extends ConsumerStatefulWidget {
 
 class _GameScreenState extends ConsumerState<GameScreen> {
   bool _gameOverDialogShown = false;
+  bool _gameConfigured = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_gameConfigured) {
+      _gameConfigured = true;
+      final args =
+          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+      if (args != null && args['mode'] == GameMode.ai) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            ref.read(gameProvider.notifier).configureAiGame(
+                  playerSide: args['side'] as PlayerSide,
+                  difficulty: args['difficulty'] as int,
+                );
+          }
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -238,15 +259,38 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   Widget _buildStatusText(GameState state) {
     String text = "White's Turn";
     Color color = AppColors.textPrimary;
+    final isAi = state.gameMode == GameMode.ai;
 
-    if (state.status == GameStatus.playing) {
-      text = "${state.currentTurn.label}'s Turn";
+    if (state.isAiThinking) {
+      text = 'AI is thinking...';
+      color = AppColors.goldLight;
+    } else if (state.status == GameStatus.playing) {
+      if (isAi) {
+        text = state.currentTurn == state.playerSide
+            ? 'Your Turn'
+            : "AI's Turn";
+      } else {
+        text = "${state.currentTurn.label}'s Turn";
+      }
       color = AppColors.textPrimary;
     } else if (state.status == GameStatus.check) {
-      text = "${state.currentTurn.label} is in Check!";
+      if (isAi) {
+        text = state.currentTurn == state.playerSide
+            ? 'You are in Check!'
+            : 'AI is in Check!';
+      } else {
+        text = "${state.currentTurn.label} is in Check!";
+      }
       color = AppColors.error;
     } else if (state.status == GameStatus.checkmate) {
-      text = "${state.currentTurn.opposite.label} Wins!";
+      if (isAi) {
+        // currentTurn is the side that's checkmated (can't move)
+        text = state.currentTurn == state.playerSide
+            ? 'You Lost!'
+            : 'You Win!';
+      } else {
+        text = "${state.currentTurn.opposite.label} Wins!";
+      }
       color = AppColors.goldLight;
     } else if (state.status == GameStatus.stalemate) {
       text = 'Stalemate';
@@ -256,14 +300,33 @@ class _GameScreenState extends ConsumerState<GameScreen> {
       color = AppColors.textSecondary;
     }
 
-    return Text(
-      text,
-      style: GoogleFonts.cinzel(
-        fontSize: 14,
-        fontWeight: FontWeight.w700,
-        color: color,
-        letterSpacing: 1,
-      ),
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (state.isAiThinking)
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: SizedBox(
+              width: 14,
+              height: 14,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor:
+                    AlwaysStoppedAnimation<Color>(AppColors.goldLight),
+              ),
+            ),
+          ),
+        Text(
+          text,
+          style: GoogleFonts.cinzel(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            color: color,
+            letterSpacing: 1,
+          ),
+        ),
+      ],
     );
   }
 
@@ -287,7 +350,9 @@ class _GameScreenState extends ConsumerState<GameScreen> {
           CircularGameButton(
             icon: Icons.undo_rounded,
             label: 'Undo',
-            onTap: state.moveHistory.isNotEmpty && !isGameOver
+            onTap: state.moveHistory.isNotEmpty &&
+                    !isGameOver &&
+                    !state.isAiThinking
                 ? () => notifier.undoMove()
                 : null,
           ),
@@ -297,7 +362,10 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                 : Icons.lightbulb_rounded,
             label: 'Hint',
             badgeText: '${state.hintsRemaining}',
-            onTap: state.hintsRemaining > 0 && !isGameOver && !state.isLoadingHint
+            onTap: state.hintsRemaining > 0 &&
+                    !isGameOver &&
+                    !state.isLoadingHint &&
+                    !state.isAiThinking
                 ? () => notifier.requestHint()
                 : null,
           ),

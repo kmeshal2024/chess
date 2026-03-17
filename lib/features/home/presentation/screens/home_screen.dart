@@ -1,7 +1,9 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:chess/app/router.dart';
 import 'package:chess/app/theme.dart';
+import 'package:chess/core/enums.dart';
 import 'package:chess/shared/widgets/wood_panel.dart';
 import 'package:chess/shared/widgets/gold_button.dart';
 import 'package:chess/shared/widgets/difficulty_slider.dart';
@@ -364,7 +366,26 @@ class _HomeScreenState extends State<HomeScreen> {
         icon: Icons.play_arrow_rounded,
         isLarge: true,
         backgroundColor: const Color(0xFF4CAF50),
-        onTap: () => Navigator.pushNamed(context, AppRouter.game),
+        onTap: () {
+          PlayerSide playerSide;
+          if (_selectedSide == 0) {
+            playerSide = PlayerSide.white;
+          } else if (_selectedSide == 2) {
+            playerSide = PlayerSide.black;
+          } else {
+            playerSide =
+                Random().nextBool() ? PlayerSide.white : PlayerSide.black;
+          }
+          Navigator.pushNamed(
+            context,
+            AppRouter.game,
+            arguments: {
+              'mode': GameMode.ai,
+              'side': playerSide,
+              'difficulty': _difficulty,
+            },
+          );
+        },
       ),
     );
   }

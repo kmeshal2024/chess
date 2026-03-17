@@ -23,6 +23,11 @@ class GameState extends Equatable {
   final BoardPosition? hintFrom;
   final BoardPosition? hintTo;
   final bool isLoadingHint;
+  // AI mode fields
+  final GameMode gameMode;
+  final PlayerSide playerSide; // which side the human plays
+  final int aiDifficulty;
+  final bool isAiThinking;
 
   const GameState({
     required this.board,
@@ -43,6 +48,10 @@ class GameState extends Equatable {
     this.hintFrom,
     this.hintTo,
     this.isLoadingHint = false,
+    this.gameMode = GameMode.offline,
+    this.playerSide = PlayerSide.white,
+    this.aiDifficulty = 3,
+    this.isAiThinking = false,
   });
 
   GameState copyWith({
@@ -67,6 +76,10 @@ class GameState extends Equatable {
     BoardPosition? hintTo,
     bool clearHint = false,
     bool? isLoadingHint,
+    GameMode? gameMode,
+    PlayerSide? playerSide,
+    int? aiDifficulty,
+    bool? isAiThinking,
   }) {
     return GameState(
       board: board ?? this.board,
@@ -88,6 +101,10 @@ class GameState extends Equatable {
       hintFrom: clearHint ? null : (hintFrom ?? this.hintFrom),
       hintTo: clearHint ? null : (hintTo ?? this.hintTo),
       isLoadingHint: isLoadingHint ?? this.isLoadingHint,
+      gameMode: gameMode ?? this.gameMode,
+      playerSide: playerSide ?? this.playerSide,
+      aiDifficulty: aiDifficulty ?? this.aiDifficulty,
+      isAiThinking: isAiThinking ?? this.isAiThinking,
     );
   }
 
@@ -119,5 +136,9 @@ class GameState extends Equatable {
         hintFrom,
         hintTo,
         isLoadingHint,
+        gameMode,
+        playerSide,
+        aiDifficulty,
+        isAiThinking,
       ];
 }

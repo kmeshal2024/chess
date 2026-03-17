@@ -14,6 +14,7 @@ class GameNotifier extends StateNotifier<GameState> {
   final bool Function() _isSoundEnabled;
   final bool Function() _isHapticEnabled;
   Timer? _hintTimer;
+  int _gameInstanceId = 0;
 
   GameNotifier(
     this._engine, {
@@ -47,18 +48,62 @@ class GameNotifier extends StateNotifier<GameState> {
     }
   }
 
-  void restartGame() {
+  /// Configure game for AI mode
+  void configureAiGame({
+    required PlayerSide playerSide,
+    required int difficulty,
+  }) {
     _hintTimer?.cancel();
+    _gameInstanceId++;
     try {
       _engine.newGame();
       state = GameState(
         board: _engine.getBoard(),
         currentTurn: PlayerSide.white,
         status: GameStatus.playing,
-        gameId: state.gameId,
-        boardFlipped: state.boardFlipped,
+        gameMode: GameMode.ai,
+        playerSide: playerSide,
+        aiDifficulty: difficulty,
+        boardFlipped: playerSide == PlayerSide.black,
         hintsRemaining: 4,
       );
+
+      // If player is black, AI (white) moves first
+      if (playerSide == PlayerSide.black) {
+        _scheduleAiMoveIfNeeded();
+      }
+    } catch (e) {
+      state = GameState(
+        board: List.generate(8, (_) => List<ChessPiece?>.filled(8, null)),
+        status: GameStatus.idle,
+      );
+    }
+  }
+
+  void restartGame() {
+    _hintTimer?.cancel();
+    _gameInstanceId++;
+    final savedMode = state.gameMode;
+    final savedSide = state.playerSide;
+    final savedDifficulty = state.aiDifficulty;
+
+    try {
+      _engine.newGame();
+      state = GameState(
+        board: _engine.getBoard(),
+        currentTurn: PlayerSide.white,
+        status: GameStatus.playing,
+        gameMode: savedMode,
+        playerSide: savedSide,
+        aiDifficulty: savedDifficulty,
+        boardFlipped: savedMode == GameMode.ai && savedSide == PlayerSide.black,
+        hintsRemaining: 4,
+      );
+
+      // If AI mode and player is black, AI moves first
+      if (savedMode == GameMode.ai && savedSide == PlayerSide.black) {
+        _scheduleAiMoveIfNeeded();
+      }
     } catch (e) {
       state = GameState(
         board: List.generate(8, (_) => List<ChessPiece?>.filled(8, null)),
@@ -77,6 +122,15 @@ class GameNotifier extends StateNotifier<GameState> {
     }
 
     if (state.awaitingPromotion) return;
+
+    // Block interaction while AI is thinking
+    if (state.isAiThinking) return;
+
+    // In AI mode, only allow player to move their pieces
+    if (state.gameMode == GameMode.ai &&
+        state.currentTurn != state.playerSide) {
+      return;
+    }
 
     final piece = state.board[position.row][position.col];
 
@@ -206,6 +260,9 @@ class GameNotifier extends StateNotifier<GameState> {
       if (_isHapticEnabled()) {
         HapticFeedback.mediumImpact();
       }
+
+      // Trigger AI move if needed
+      _scheduleAiMoveIfNeeded();
     } catch (e) {
       state = state.copyWith(
         clearSelection: true,
@@ -213,6 +270,71 @@ class GameNotifier extends StateNotifier<GameState> {
       );
     }
   }
+
+  // --- AI Logic ---
+
+  void _scheduleAiMoveIfNeeded() {
+    if (state.gameMode != GameMode.ai) return;
+    if (state.currentTurn == state.playerSide) return;
+    if (_isGameOver(state.status)) return;
+
+    Future.delayed(const Duration(milliseconds: 400), () {
+      if (mounted) _makeAiMove();
+    });
+  }
+
+  bool _isGameOver(GameStatus status) {
+    return status == GameStatus.checkmate ||
+        status == GameStatus.stalemate ||
+        status == GameStatus.draw;
+  }
+
+  Future<void> _makeAiMove() async {
+    if (!mounted) return;
+    if (_isGameOver(state.status)) return;
+
+    final instanceId = _gameInstanceId;
+    state = state.copyWith(isAiThinking: true);
+
+    try {
+      // Small delay for natural feel
+      await Future.delayed(const Duration(milliseconds: 300));
+      if (!mounted || _gameInstanceId != instanceId) return;
+
+      final bestMove = await _engine.getBestMove(
+        difficulty: state.aiDifficulty,
+      );
+      if (!mounted || _gameInstanceId != instanceId) return;
+
+      if (bestMove == null) {
+        state = state.copyWith(isAiThinking: false);
+        return;
+      }
+
+      final (from, to) = bestMove;
+
+      // Check for promotion — AI always promotes to queen
+      bool isPromo = false;
+      try {
+        isPromo = _engine.isPromotionMove(from, to);
+      } catch (_) {}
+
+      // Clear AI thinking flag before executing move
+      state = state.copyWith(isAiThinking: false);
+
+      if (isPromo) {
+        _executeMove(from, to, promotion: PieceType.queen);
+      } else {
+        _executeMove(from, to);
+      }
+    } catch (e) {
+      if (mounted && _gameInstanceId == instanceId) {
+        state = state.copyWith(isAiThinking: false);
+      }
+    }
+  }
+
+  // --- Sound ---
 
   void _playMoveSound(GameStatus status, bool isCapture) {
     if (!_isSoundEnabled() || _soundService == null) return;
@@ -230,9 +352,24 @@ class GameNotifier extends StateNotifier<GameState> {
     }
   }
 
+  // --- Undo ---
+
   void undoMove() {
     if (state.moveHistory.isEmpty) return;
     if (state.awaitingPromotion) return;
+    if (state.isAiThinking) return;
+
+    // In AI mode, undo both AI move and human move
+    if (state.gameMode == GameMode.ai && state.moveHistory.length >= 2) {
+      _undoSingleMove(); // Undo AI's last move
+      _undoSingleMove(); // Undo human's last move
+    } else {
+      _undoSingleMove();
+    }
+  }
+
+  void _undoSingleMove() {
+    if (state.moveHistory.isEmpty) return;
 
     try {
       final lastMove = state.moveHistory.last;
@@ -273,14 +410,19 @@ class GameNotifier extends StateNotifier<GameState> {
     }
   }
 
+  // --- Board ---
+
   void flipBoard() {
     state = state.copyWith(boardFlipped: !state.boardFlipped);
   }
+
+  // --- Hints ---
 
   /// Request a hint from the AI engine
   Future<void> requestHint() async {
     if (state.hintsRemaining <= 0) return;
     if (state.isLoadingHint) return;
+    if (state.isAiThinking) return;
     if (state.status != GameStatus.playing &&
         state.status != GameStatus.check) {
       return;
