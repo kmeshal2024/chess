@@ -1,4 +1,4 @@
-name: Build APK
+name: Build APK & AAB
 
 on:
   push:
@@ -30,8 +30,17 @@ jobs:
       - name: Build APK
         run: flutter build apk --release
 
+      - name: Build AAB (App Bundle for Google Play)
+        run: flutter build appbundle --release
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: chess-app-release
+          name: chess-app-release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Upload AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: chess-app-release-aab
+          path: build/app/outputs/bundle/release/app-release.aab
