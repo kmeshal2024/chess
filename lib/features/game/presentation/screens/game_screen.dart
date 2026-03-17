@@ -6,6 +6,7 @@ import 'package:chess/core/enums.dart';
 import 'package:chess/shared/widgets/gold_button.dart';
 import 'package:chess/shared/widgets/player_avatar.dart';
 import '../providers/game_provider.dart';
+import '../providers/game_state.dart';
 import '../widgets/chess_board_widget.dart';
 import '../widgets/promotion_dialog.dart';
 import '../widgets/game_over_dialog.dart';
@@ -22,13 +23,21 @@ class _GameScreenState extends ConsumerState<GameScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(gameProvider);
+    final GameState state;
+    try {
+      state = ref.watch(gameProvider);
+    } catch (e) {
+      return _buildErrorScreen('Failed to load game: $e');
+    }
+
     final notifier = ref.read(gameProvider.notifier);
 
     // Show promotion dialog
     if (state.awaitingPromotion) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _showPromotionDialog(context, state.currentTurn, notifier);
+        if (mounted) {
+          _showPromotionDialog(context, state.currentTurn, notifier);
+        }
       });
     }
 
@@ -40,17 +49,17 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     if (isGameOver && !_gameOverDialogShown) {
       _gameOverDialogShown = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _showGameOverDialog(
-            context, state.status, state.currentTurn, notifier);
+        if (mounted) {
+          _showGameOverDialog(
+              context, state.status, state.currentTurn, notifier);
+        }
       });
     } else if (!isGameOver) {
       _gameOverDialogShown = false;
     }
 
-    final screenWidth = MediaQuery.of(context).size.width;
-    final boardSize = screenWidth - 32;
-
     return Scaffold(
+      backgroundColor: AppColors.backgroundDark,
       body: Container(
         decoration: const BoxDecoration(
           gradient: RadialGradient(
@@ -65,43 +74,92 @@ class _GameScreenState extends ConsumerState<GameScreen> {
           ),
         ),
         child: SafeArea(
-          child: Column(
-            children: [
-              // Top bar with avatar and settings
-              _buildTopBar(context, state),
-              const SizedBox(height: 4),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final screenWidth = constraints.maxWidth;
+              final screenHeight = constraints.maxHeight;
+              // Calculate board size to fit within available space
+              final topBarHeight = 60.0;
+              final indicatorsHeight = 50.0;
+              final controlsHeight = 110.0;
+              final padding = 40.0;
+              final availableForBoard =
+                  screenHeight - topBarHeight - indicatorsHeight - controlsHeight - padding;
+              final maxBoardSize = screenWidth - 32;
+              final boardSize = availableForBoard < maxBoardSize
+                  ? availableForBoard
+                  : maxBoardSize;
 
-              // Turn indicator dots
-              _buildTurnIndicator(state),
-              const SizedBox(height: 8),
+              return Column(
+                children: [
+                  // Top bar
+                  _buildTopBar(context, state),
 
-              // Status text
-              _buildStatusText(state),
-              const SizedBox(height: 8),
+                  // Turn indicator dots
+                  _buildTurnIndicator(state),
+                  const SizedBox(height: 4),
 
-              // Chess board
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: SizedBox(
-                  width: boardSize,
-                  height: boardSize,
-                  child: const ChessBoardWidget(),
-                ),
-              ),
+                  // Status text
+                  _buildStatusText(state),
+                  const SizedBox(height: 8),
 
-              const Spacer(),
+                  // Chess board - adaptive size
+                  Expanded(
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: AspectRatio(
+                          aspectRatio: 1.0,
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxWidth: maxBoardSize,
+                              maxHeight: maxBoardSize,
+                            ),
+                            child: const ChessBoardWidget(),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
 
-              // Bottom controls
-              _buildGameControls(context, notifier, state, isGameOver),
-              const SizedBox(height: 16),
-            ],
+                  const SizedBox(height: 8),
+
+                  // Bottom controls
+                  _buildGameControls(context, notifier, state, isGameOver),
+                  const SizedBox(height: 12),
+                ],
+              );
+            },
           ),
         ),
       ),
     );
   }
 
-  Widget _buildTopBar(BuildContext context, dynamic state) {
+  Widget _buildErrorScreen(String message) {
+    return Scaffold(
+      backgroundColor: AppColors.backgroundDark,
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, color: AppColors.error, size: 48),
+            const SizedBox(height: 16),
+            Text(message,
+                style: const TextStyle(color: AppColors.textPrimary),
+                textAlign: TextAlign.center),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Go Back'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTopBar(BuildContext context, GameState state) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
@@ -115,19 +173,18 @@ class _GameScreenState extends ConsumerState<GameScreen> {
               height: 40,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.surface.withOpacity(0.5),
+                color: AppColors.surface.withValues(alpha: 0.5),
                 border: Border.all(
-                    color: AppColors.goldDark.withOpacity(0.3), width: 1.5),
+                    color: AppColors.goldDark.withValues(alpha: 0.3),
+                    width: 1.5),
               ),
               child: const Icon(Icons.arrow_back_rounded,
                   color: AppColors.goldLight, size: 20),
             ),
           ),
           const SizedBox(width: 12),
-          // Player avatar
           const PlayerAvatar(size: 44, icon: Icons.person),
           const Spacer(),
-          // Title
           Text(
             'GAME',
             style: GoogleFonts.cinzel(
@@ -138,7 +195,6 @@ class _GameScreenState extends ConsumerState<GameScreen> {
             ),
           ),
           const Spacer(),
-          // Settings gear
           GestureDetector(
             onTap: () {},
             child: Container(
@@ -146,9 +202,10 @@ class _GameScreenState extends ConsumerState<GameScreen> {
               height: 40,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.surface.withOpacity(0.5),
+                color: AppColors.surface.withValues(alpha: 0.5),
                 border: Border.all(
-                    color: AppColors.goldDark.withOpacity(0.3), width: 1.5),
+                    color: AppColors.goldDark.withValues(alpha: 0.3),
+                    width: 1.5),
               ),
               child: const Icon(Icons.settings_rounded,
                   color: AppColors.goldLight, size: 20),
@@ -159,7 +216,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     );
   }
 
-  Widget _buildTurnIndicator(dynamic state) {
+  Widget _buildTurnIndicator(GameState state) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(5, (i) {
@@ -172,49 +229,41 @@ class _GameScreenState extends ConsumerState<GameScreen> {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: isCheck
-                ? AppColors.error.withOpacity(0.8)
-                : AppColors.goldLight.withOpacity(0.5),
-            boxShadow: [
-              if (isCheck)
-                BoxShadow(
-                  color: AppColors.error.withOpacity(0.4),
-                  blurRadius: 4,
-                ),
-            ],
+                ? AppColors.error.withValues(alpha: 0.8)
+                : AppColors.goldLight.withValues(alpha: 0.5),
+            boxShadow: isCheck
+                ? [
+                    BoxShadow(
+                      color: AppColors.error.withValues(alpha: 0.4),
+                      blurRadius: 4,
+                    ),
+                  ]
+                : [],
           ),
         );
       }),
     );
   }
 
-  Widget _buildStatusText(dynamic state) {
-    String text;
-    Color color;
+  Widget _buildStatusText(GameState state) {
+    String text = "White's Turn";
+    Color color = AppColors.textPrimary;
 
-    switch (state.status) {
-      case GameStatus.playing:
-        text = "${state.currentTurn.label}'s Turn";
-        color = AppColors.textPrimary;
-        break;
-      case GameStatus.check:
-        text = "${state.currentTurn.label} is in Check!";
-        color = AppColors.error;
-        break;
-      case GameStatus.checkmate:
-        text = "${state.currentTurn.opposite.label} Wins!";
-        color = AppColors.goldLight;
-        break;
-      case GameStatus.stalemate:
-        text = 'Stalemate';
-        color = AppColors.textSecondary;
-        break;
-      case GameStatus.draw:
-        text = 'Draw';
-        color = AppColors.textSecondary;
-        break;
-      default:
-        text = 'Ready';
-        color = AppColors.textSecondary;
+    if (state.status == GameStatus.playing) {
+      text = "${state.currentTurn.label}'s Turn";
+      color = AppColors.textPrimary;
+    } else if (state.status == GameStatus.check) {
+      text = "${state.currentTurn.label} is in Check!";
+      color = AppColors.error;
+    } else if (state.status == GameStatus.checkmate) {
+      text = "${state.currentTurn.opposite.label} Wins!";
+      color = AppColors.goldLight;
+    } else if (state.status == GameStatus.stalemate) {
+      text = 'Stalemate';
+      color = AppColors.textSecondary;
+    } else if (state.status == GameStatus.draw) {
+      text = 'Draw';
+      color = AppColors.textSecondary;
     }
 
     return Text(
@@ -229,7 +278,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   }
 
   Widget _buildGameControls(
-      BuildContext context, dynamic notifier, dynamic state, bool isGameOver) {
+      BuildContext context, dynamic notifier, GameState state, bool isGameOver) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Row(

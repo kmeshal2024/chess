@@ -5,6 +5,7 @@ import 'package:chess/core/enums.dart';
 import '../../domain/entities/board_position.dart';
 import '../../domain/entities/chess_piece.dart';
 import '../providers/game_provider.dart';
+import '../providers/game_state.dart';
 import 'chess_square.dart';
 
 class ChessBoardWidget extends ConsumerWidget {
@@ -12,15 +13,39 @@ class ChessBoardWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(gameProvider);
+    final GameState state;
+    try {
+      state = ref.watch(gameProvider);
+    } catch (e) {
+      return const Center(
+        child: Text('Error loading board',
+            style: TextStyle(color: AppColors.textPrimary)),
+      );
+    }
+
     final notifier = ref.read(gameProvider.notifier);
+
+    // Safety check: board must be 8x8
+    if (state.board.length != 8 ||
+        state.board.any((row) => row.length != 8)) {
+      return const Center(
+        child: Text('Initializing...',
+            style: TextStyle(color: AppColors.textSecondary)),
+      );
+    }
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final totalSize = constraints.maxWidth;
+        final totalSize = constraints.maxWidth < constraints.maxHeight
+            ? constraints.maxWidth
+            : constraints.maxHeight;
         final coordSize = 18.0;
         final boardSize = totalSize - coordSize;
         final squareSize = boardSize / 8;
+
+        if (squareSize <= 0) {
+          return const SizedBox.shrink();
+        }
 
         return SizedBox(
           width: totalSize,
@@ -42,12 +67,12 @@ class ChessBoardWidget extends ConsumerWidget {
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.6),
+                        color: Colors.black.withValues(alpha: 0.6),
                         blurRadius: 20,
                         offset: const Offset(0, 6),
                       ),
                       BoxShadow(
-                        color: AppColors.gold.withOpacity(0.1),
+                        color: AppColors.gold.withValues(alpha: 0.1),
                         blurRadius: 2,
                         spreadRadius: 0,
                       ),
@@ -78,8 +103,7 @@ class ChessBoardWidget extends ConsumerWidget {
                             final isCheckSquare = _isCheckSquare(
                                 state.status,
                                 state.currentTurn,
-                                piece,
-                                state.board);
+                                piece);
 
                             return ChessSquare(
                               row: row,
@@ -119,7 +143,7 @@ class ChessBoardWidget extends ConsumerWidget {
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: AppColors.goldDark.withOpacity(0.7),
+                              color: AppColors.goldDark.withValues(alpha: 0.7),
                             ),
                           ),
                         ),
@@ -150,7 +174,7 @@ class ChessBoardWidget extends ConsumerWidget {
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: AppColors.goldDark.withOpacity(0.7),
+                              color: AppColors.goldDark.withValues(alpha: 0.7),
                             ),
                           ),
                         ),
@@ -170,7 +194,6 @@ class ChessBoardWidget extends ConsumerWidget {
     GameStatus status,
     PlayerSide currentTurn,
     ChessPiece? piece,
-    List<List<ChessPiece?>> board,
   ) {
     if (status != GameStatus.check && status != GameStatus.checkmate) {
       return false;
