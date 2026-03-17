@@ -6,6 +6,8 @@ import 'package:chess/core/enums.dart';
 class GameOverDialog extends StatelessWidget {
   final GameStatus status;
   final PlayerSide currentTurn;
+  final GameMode gameMode;
+  final PlayerSide playerSide;
   final VoidCallback onNewGame;
   final VoidCallback onDismiss;
 
@@ -15,6 +17,8 @@ class GameOverDialog extends StatelessWidget {
     required this.currentTurn,
     required this.onNewGame,
     required this.onDismiss,
+    this.gameMode = GameMode.offline,
+    this.playerSide = PlayerSide.white,
   });
 
   @override
@@ -27,32 +31,23 @@ class GameOverDialog extends StatelessWidget {
           gradient: const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF1B4D37),
-              Color(0xFF0A2E1F),
-            ],
+            colors: [Color(0xFF1B4D37), Color(0xFF0A2E1F)],
           ),
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
-            color: _getAccentColor().withOpacity(0.5),
+            color: _getAccentColor().withValues(alpha: 0.5),
             width: 2,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.7),
+              color: Colors.black.withValues(alpha: 0.7),
               blurRadius: 32,
-            ),
-            BoxShadow(
-              color: _getAccentColor().withOpacity(0.1),
-              blurRadius: 4,
-              spreadRadius: 0,
             ),
           ],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Icon
             Container(
               width: 72,
               height: 72,
@@ -60,20 +55,16 @@ class GameOverDialog extends StatelessWidget {
                 shape: BoxShape.circle,
                 gradient: LinearGradient(
                   colors: [
-                    _getAccentColor().withOpacity(0.3),
-                    _getAccentColor().withOpacity(0.1),
+                    _getAccentColor().withValues(alpha: 0.3),
+                    _getAccentColor().withValues(alpha: 0.1),
                   ],
                 ),
                 border: Border.all(
-                  color: _getAccentColor().withOpacity(0.4),
+                  color: _getAccentColor().withValues(alpha: 0.4),
                   width: 2,
                 ),
               ),
-              child: Icon(
-                _getIcon(),
-                color: _getAccentColor(),
-                size: 36,
-              ),
+              child: Icon(_getIcon(), color: _getAccentColor(), size: 36),
             ),
             const SizedBox(height: 24),
             Text(
@@ -96,7 +87,6 @@ class GameOverDialog extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 32),
-            // New Game button
             GestureDetector(
               onTap: onNewGame,
               child: Container(
@@ -111,16 +101,9 @@ class GameOverDialog extends StatelessWidget {
                   ),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
-                    color: AppColors.goldDark.withOpacity(0.5),
+                    color: AppColors.goldDark.withValues(alpha: 0.5),
                     width: 1.5,
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: _getAccentColor().withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
                 ),
                 child: Center(
                   child: Text(
@@ -140,10 +123,7 @@ class GameOverDialog extends StatelessWidget {
               onPressed: onDismiss,
               child: Text(
                 'Review Board',
-                style: GoogleFonts.inter(
-                  color: AppColors.textMuted,
-                  fontSize: 14,
-                ),
+                style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 14),
               ),
             ),
           ],
@@ -156,6 +136,8 @@ class GameOverDialog extends StatelessWidget {
     switch (status) {
       case GameStatus.checkmate:
         return AppColors.gold;
+      case GameStatus.resigned:
+        return AppColors.error;
       case GameStatus.stalemate:
       case GameStatus.draw:
         return AppColors.textSecondary;
@@ -168,6 +150,8 @@ class GameOverDialog extends StatelessWidget {
     switch (status) {
       case GameStatus.checkmate:
         return Icons.emoji_events_rounded;
+      case GameStatus.resigned:
+        return Icons.flag_rounded;
       case GameStatus.stalemate:
       case GameStatus.draw:
         return Icons.handshake_rounded;
@@ -177,9 +161,19 @@ class GameOverDialog extends StatelessWidget {
   }
 
   String _getTitle() {
+    final isAi = gameMode == GameMode.ai;
+
     switch (status) {
       case GameStatus.checkmate:
+        if (isAi) {
+          return currentTurn == playerSide ? 'Defeated!' : 'Victory!';
+        }
         return 'Checkmate!';
+      case GameStatus.resigned:
+        if (isAi) {
+          return 'You Resigned';
+        }
+        return '${currentTurn.label} Resigned';
       case GameStatus.stalemate:
         return 'Stalemate';
       case GameStatus.draw:
@@ -190,9 +184,21 @@ class GameOverDialog extends StatelessWidget {
   }
 
   String _getSubtitle() {
+    final isAi = gameMode == GameMode.ai;
+
     switch (status) {
       case GameStatus.checkmate:
-        return '${currentTurn.opposite.label} wins the game!';
+        if (isAi) {
+          return currentTurn == playerSide
+              ? 'The AI wins by checkmate.\nBetter luck next time!'
+              : 'You defeated the AI!\nGreat game!';
+        }
+        return '${currentTurn.opposite.label} wins by checkmate!';
+      case GameStatus.resigned:
+        if (isAi) {
+          return 'You resigned the game.\nThe AI wins.';
+        }
+        return '${currentTurn.label} resigned.\n${currentTurn.opposite.label} wins!';
       case GameStatus.stalemate:
         return 'No legal moves available.\nThe game is a draw.';
       case GameStatus.draw:

@@ -286,7 +286,8 @@ class GameNotifier extends StateNotifier<GameState> {
   bool _isGameOver(GameStatus status) {
     return status == GameStatus.checkmate ||
         status == GameStatus.stalemate ||
-        status == GameStatus.draw;
+        status == GameStatus.draw ||
+        status == GameStatus.resigned;
   }
 
   Future<void> _makeAiMove() async {
@@ -407,6 +408,33 @@ class GameNotifier extends StateNotifier<GameState> {
       );
     } catch (e) {
       // Undo failed, don't crash
+    }
+  }
+
+  // --- Resign & Draw ---
+
+  void resignGame() {
+    if (_isGameOver(state.status)) return;
+    if (state.isAiThinking) return;
+    _hintTimer?.cancel();
+    _gameInstanceId++;
+    state = state.copyWith(status: GameStatus.resigned);
+  }
+
+  void offerDraw() {
+    if (_isGameOver(state.status)) return;
+    if (state.isAiThinking) return;
+    // In AI mode, AI accepts draw if position is roughly equal or losing
+    if (state.gameMode == GameMode.ai) {
+      _hintTimer?.cancel();
+      _gameInstanceId++;
+      state = state.copyWith(status: GameStatus.draw);
+    }
+    // In offline mode, just accept draw immediately (both players at same device)
+    if (state.gameMode == GameMode.offline) {
+      _hintTimer?.cancel();
+      _gameInstanceId++;
+      state = state.copyWith(status: GameStatus.draw);
     }
   }
 
