@@ -15,27 +15,31 @@ class AppRouter {
   static Route<dynamic> generateRoute(RouteSettings routeSettings) {
     switch (routeSettings.name) {
       case home:
-        return _buildRoute(const HomeScreen());
+        return _buildRoute(const HomeScreen(), routeSettings);
       case game:
-        return _buildRoute(const GameScreen());
+        return _buildRoute(const GameScreen(), routeSettings);
       case online:
-        return _buildRoute(const OnlineLobbyScreen());
+        return _buildRoute(const OnlineLobbyScreen(), routeSettings);
       case onlineGame:
         final args = routeSettings.arguments as Map<String, dynamic>;
-        return _buildRoute(OnlineGameScreen(
-          roomCode: args['roomCode'] as String,
-          playerId: args['playerId'] as String,
-          isHost: args['isHost'] as bool,
-        ));
+        return _buildRoute(
+          OnlineGameScreen(
+            roomCode: args['roomCode'] as String,
+            playerId: args['playerId'] as String,
+            isHost: args['isHost'] as bool,
+          ),
+          routeSettings,
+        );
       case settings:
-        return _buildRoute(const SettingsScreen());
+        return _buildRoute(const SettingsScreen(), routeSettings);
       default:
-        return _buildRoute(const HomeScreen());
+        return _buildRoute(const HomeScreen(), routeSettings);
     }
   }
 
-  static PageRouteBuilder _buildRoute(Widget page) {
+  static PageRouteBuilder _buildRoute(Widget page, RouteSettings settings) {
     return PageRouteBuilder(
+      settings: settings,
       pageBuilder: (context, animation, secondaryAnimation) => page,
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
         return FadeTransition(
