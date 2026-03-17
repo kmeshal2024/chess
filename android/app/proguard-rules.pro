@@ -11,3 +11,6 @@
 
 ## Audioplayers
 -keep class xyz.luan.audioplayers.** { *; }
+
+## Google Play Core (referenced by Flutter for deferred components)
+-dontwarn com.google.android.play.core.**
